@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, TimeDelta, Utc};
 use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
@@ -13,7 +13,7 @@ pub struct Reading {
 
 impl Reading {
     pub fn from_bytes(data: &[u8]) -> Option<Self> {
-        if data.len() < 8 {
+        if data.len() < 13 {
             return None;
         }
 
@@ -22,9 +22,14 @@ impl Reading {
         let pressure_raw = u16::from_le_bytes([data[4], data[5]]);
         let humidity_percent = data[6];
         let battery_percent = data[7];
+        // Bytes 8: status, 9-10: interval, 11-12: age (seconds since measurement)
+        let age_seconds = u16::from_le_bytes([data[11], data[12]]);
+
+        // Calculate actual measurement time by subtracting age from now
+        let measurement_time = Utc::now() - TimeDelta::seconds(age_seconds as i64);
 
         Some(Self {
-            timestamp: Utc::now(),
+            timestamp: measurement_time,
             co2_ppm,
             temperature_c: temp_raw as f32 * 0.05,
             humidity_percent,

@@ -3,6 +3,7 @@ mod db;
 mod models;
 
 use anyhow::Result;
+use chrono::DateTime;
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -101,15 +102,16 @@ async fn main() -> Result<()> {
         );
     }
 
-    // Check for duplicate before saving
+    // Check for stale data (same measurement we already have)
     let db = Database::open(&db_path)?;
-    if let Some((last_co2, last_humidity, last_battery)) = db.last_reading()?
-        && last_co2 == reading.co2_ppm
-        && last_humidity == reading.humidity_percent
-        && last_battery == reading.battery_percent
+    if let Some(last_ts) = db.last_timestamp()?
+        && let Ok(last_time) = DateTime::parse_from_rfc3339(&last_ts)
     {
-        eprintln!("Skipped (unchanged from last reading)");
-        return Ok(());
+        let diff = reading.timestamp.signed_duration_since(last_time.to_utc());
+        if diff.abs().num_seconds() < 60 {
+            eprintln!("Skipped (stale - same measurement as last reading)");
+            return Ok(());
+        }
     }
 
     db.insert(&reading)?;

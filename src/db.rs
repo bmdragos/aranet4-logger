@@ -63,13 +63,13 @@ impl Database {
         Ok(())
     }
 
-    pub fn last_reading(&self) -> Result<Option<(u16, u8, u8)>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT co2_ppm, humidity_percent, battery_percent FROM readings ORDER BY id DESC LIMIT 1",
-        )?;
+    pub fn last_timestamp(&self) -> Result<Option<String>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT timestamp FROM readings ORDER BY id DESC LIMIT 1")?;
         let mut rows = stmt.query([])?;
         if let Some(row) = rows.next()? {
-            Ok(Some((row.get(0)?, row.get(1)?, row.get(2)?)))
+            Ok(Some(row.get(0)?))
         } else {
             Ok(None)
         }
