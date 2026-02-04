@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use btleplug::api::{Central, Characteristic, Manager as _, Peripheral as _, ScanFilter};
 use btleplug::platform::{Adapter, Manager, Peripheral};
 use std::time::Duration;
@@ -8,8 +8,7 @@ use uuid::Uuid;
 use crate::models::Reading;
 
 const ARANET4_SERVICE: Uuid = Uuid::from_u128(0x0000FCE0_0000_1000_8000_00805f9b34fb);
-const SENSOR_CHARACTERISTIC: Uuid =
-    Uuid::from_u128(0xF0CD3001_95DA_4F4B_9AC8_AA55D312AF0C);
+const SENSOR_CHARACTERISTIC: Uuid = Uuid::from_u128(0xF0CD3001_95DA_4F4B_9AC8_AA55D312AF0C);
 
 pub struct Aranet4 {
     peripheral: Peripheral,
