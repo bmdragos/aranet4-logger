@@ -1,0 +1,22 @@
+[package]
+name = "aranet4-logger"
+version = "0.1.0"
+edition = "2024"
+description = "Log Aranet4 CO2 sensor readings to SQLite via Bluetooth LE"
+license = "MIT"
+repository = "https://github.com/bmdragos/aranet4-logger"
+keywords = ["aranet4", "co2", "bluetooth", "ble", "air-quality"]
+categories = ["command-line-utilities", "hardware-support"]
+authors = ["Brandon Dragos"]
+
+[dependencies]
+btleplug = "0.11"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive"] }
+uuid = "1"
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+home = "0.5"
