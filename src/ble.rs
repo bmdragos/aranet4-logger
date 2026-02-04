@@ -7,8 +7,8 @@ use uuid::Uuid;
 
 use crate::models::Reading;
 
-const ARANET4_SERVICE: Uuid = Uuid::from_u128(0x0000FCE0_0000_1000_8000_00805f9b34fb);
-const SENSOR_CHARACTERISTIC: Uuid = Uuid::from_u128(0xF0CD3001_95DA_4F4B_9AC8_AA55D312AF0C);
+const ARANET4_SERVICE: Uuid = Uuid::from_u128(0x0000fce0_0000_1000_8000_00805f9b34fb);
+const SENSOR_CHARACTERISTIC: Uuid = Uuid::from_u128(0xf0cd3001_95da_4f4b_9ac8_aa55d312af0c);
 
 pub struct Aranet4 {
     peripheral: Peripheral,
@@ -58,12 +58,11 @@ async fn find_device(adapter: &Adapter, name_filter: &str) -> Result<Peripheral>
     let name_filter_lower = name_filter.to_lowercase();
 
     for p in peripherals {
-        if let Some(props) = p.properties().await? {
-            if let Some(name) = props.local_name {
-                if name.to_lowercase().contains(&name_filter_lower) {
-                    return Ok(p);
-                }
-            }
+        if let Some(props) = p.properties().await?
+            && let Some(name) = props.local_name
+            && name.to_lowercase().contains(&name_filter_lower)
+        {
+            return Ok(p);
         }
     }
 

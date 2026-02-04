@@ -24,13 +24,21 @@ struct Args {
     /// Output reading as JSON to stdout
     #[arg(long)]
     json: bool,
+
+    /// Export all readings to CSV and exit
+    #[arg(long)]
+    export: bool,
+
+    /// Show statistics and exit
+    #[arg(long)]
+    stats: bool,
 }
 
 fn expand_tilde(path: &str) -> PathBuf {
-    if path.starts_with("~/") {
-        if let Some(home) = home::home_dir() {
-            return home.join(&path[2..]);
-        }
+    if let Some(rest) = path.strip_prefix("~/")
+        && let Some(home) = home::home_dir()
+    {
+        return home.join(rest);
     }
     PathBuf::from(path)
 }
@@ -40,11 +48,42 @@ async fn main() -> Result<()> {
     let args = Args::parse();
     let db_path = expand_tilde(&args.database);
 
-    // Connect to Aranet4
+    // Export mode - no BLE needed
+    if args.export {
+        let db = Database::open(&db_path)?;
+        let mut stdout = std::io::stdout();
+        let count = db.export_csv(&mut stdout)?;
+        eprintln!("Exported {} readings", count);
+        return Ok(());
+    }
+
+    // Stats mode - no BLE needed
+    if args.stats {
+        let db = Database::open(&db_path)?;
+        match db.stats()? {
+            Some(stats) => {
+                println!("Readings: {}", stats.count);
+                println!(
+                    "CO2:      {:.0} ppm avg (min: {}, max: {})",
+                    stats.avg_co2, stats.min_co2, stats.max_co2
+                );
+                println!("Temp:     {:.1}°C avg", stats.avg_temp);
+                println!("Humidity: {:.0}% avg", stats.avg_humidity);
+                if let (Some(first), Some(last)) = (stats.first_reading, stats.last_reading) {
+                    println!("Period:   {} to {}", first, last);
+                }
+            }
+            None => {
+                println!("No readings yet");
+            }
+        }
+        return Ok(());
+    }
+
+    // Normal mode - connect to Aranet4 and log
     eprintln!("Scanning for {}...", args.name);
     let device = Aranet4::find_and_connect(&args.name).await?;
 
-    // Read sensor data
     let reading = device.read().await?;
     device.disconnect().await?;
 
@@ -62,8 +101,17 @@ async fn main() -> Result<()> {
         );
     }
 
-    // Save to database
+    // Check for duplicate before saving
     let db = Database::open(&db_path)?;
+    if let Some((last_co2, last_humidity, last_battery)) = db.last_reading()?
+        && last_co2 == reading.co2_ppm
+        && last_humidity == reading.humidity_percent
+        && last_battery == reading.battery_percent
+    {
+        eprintln!("Skipped (unchanged from last reading)");
+        return Ok(());
+    }
+
     db.insert(&reading)?;
     eprintln!("Saved to {}", db_path.display());
 

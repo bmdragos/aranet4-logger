@@ -8,6 +8,8 @@ A simple CLI tool to log [Aranet4](https://aranet.com/products/aranet4/) CO2 sen
 - Logs CO2, temperature, humidity, pressure, and battery level
 - Stores readings in SQLite for easy querying and analysis
 - Single-shot design - schedule with cron/launchd/systemd for continuous logging
+- Skips duplicate readings automatically (saves storage when polling frequently)
+- Built-in CSV export and statistics
 - JSON output mode for piping to other tools
 
 ## Installation
@@ -44,8 +46,14 @@ aranet4-logger --database /path/to/readings.db
 # Filter by device name (useful if you have multiple Aranet4s)
 aranet4-logger --name "Aranet4 1D016"
 
-# Output as JSON (doesn't save to database)
+# Output as JSON
 aranet4-logger --json
+
+# Show statistics
+aranet4-logger --stats
+
+# Export all readings to CSV
+aranet4-logger --export > readings.csv
 ```
 
 ### Options
@@ -55,6 +63,8 @@ aranet4-logger --json
 | `-d, --database <PATH>` | SQLite database path | `~/aranet4.db` |
 | `-n, --name <NAME>` | Device name filter | `Aranet4` |
 | `--json` | Output reading as JSON to stdout | - |
+| `--stats` | Show statistics and exit | - |
+| `--export` | Export all readings as CSV to stdout | - |
 
 ## Scheduled Logging
 
