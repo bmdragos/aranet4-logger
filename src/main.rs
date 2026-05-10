@@ -82,24 +82,13 @@ async fn main() -> Result<()> {
     }
 
     // Normal mode - connect to Aranet4 and log
-    eprintln!("Scanning for {}...", args.name);
     let device = Aranet4::find_and_connect(&args.name).await?;
 
     let reading = device.read().await?;
     device.disconnect().await?;
 
-    // Output
     if args.json {
         println!("{}", serde_json::to_string_pretty(&reading)?);
-    } else {
-        eprintln!(
-            "CO2: {} ppm | Temp: {:.1}°C | Humidity: {}% | Pressure: {:.1} hPa | Battery: {}%",
-            reading.co2_ppm,
-            reading.temperature_c,
-            reading.humidity_percent,
-            reading.pressure_hpa,
-            reading.battery_percent
-        );
     }
 
     // Check for stale data (same measurement we already have)
@@ -109,13 +98,11 @@ async fn main() -> Result<()> {
     {
         let diff = reading.timestamp.signed_duration_since(last_time.to_utc());
         if diff.abs().num_seconds() < 60 {
-            eprintln!("Skipped (stale - same measurement as last reading)");
             return Ok(());
         }
     }
 
     db.insert(&reading)?;
-    eprintln!("Saved to {}", db_path.display());
 
     Ok(())
 }
